@@ -6,10 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { UpdateAccountDto } from './dto/update-account.dto';
-import { Prisma } from 'generated/prisma';
 import { createAccountRequest } from './dto/create-account-request.dto';
 
 @Controller('account')
@@ -27,8 +27,9 @@ export class AccountController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.accountService.findOne(+id);
+  findOne(@Param('id' , ParseIntPipe) id: number) {
+    console.log('type of the id ' , typeof(id))
+    return this.accountService.findOne(id);
   }
 
   @Patch(':id')
