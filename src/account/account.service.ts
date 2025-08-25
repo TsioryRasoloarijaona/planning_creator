@@ -45,6 +45,7 @@ export class AccountService {
         id: true,
         email: true,
         name: true,
+        role: true
       },
     });
   }
