@@ -15,7 +15,7 @@ export class AuthService {
   async validateUser(credentials: LoginDto): Promise<LoginResponseDto> {
     const user = await this.accountService.findByEmail(credentials.email);
     if (user && (await verifyPassword(credentials.password, user.password))) {
-      const accessToken = await this.jwtGenerate(user.id, user.email);
+      const accessToken = await this.jwtGenerate(user.id, user.email , user.role);
       return {
         accessToken,
         account: {
@@ -30,8 +30,8 @@ export class AuthService {
     }
   }
 
-  jwtGenerate(id: number, email: string) {
-    const payload = { sub: id, email };
+  jwtGenerate(id: number, email: string , role: 'ADMIN' | 'EMPLOYEE') {
+    const payload = { sub: id, email , role};
     const accessToken = this.jwtService.signAsync(payload);
     return accessToken;
   }

@@ -3,42 +3,43 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
-  ParseIntPipe
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
-import { UpdateAccountDto } from './dto/update-account.dto';
 import { createAccountRequest } from './dto/create-account-request.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { RolesGuard } from 'src/auth/guard/role.guard';
+import { Roles } from 'src/auth/decorator/role.decorator';
+import { createAccountResDto } from './dto/create--account-res.dto';
 
 @Controller('account')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post()
-  create(@Body() createAccountDto: createAccountRequest) {
+  create(
+    @Body() createAccountDto: createAccountRequest,
+  ): Promise<createAccountResDto> {
     return this.accountService.create(createAccountDto);
   }
 
+  @Get('ping')
+  @Roles('EMPLOYEE')
+  ping(@Req() req) {
+    return req.user;
+  }
+
   @Get()
+  @Roles('ADMIN')
   findAll() {
     return this.accountService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id' , ParseIntPipe) id: number) {
-    console.log('type of the id ' , typeof(id))
-    return this.accountService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAccountDto: UpdateAccountDto) {
-    return this.accountService.update(+id, updateAccountDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.accountService.remove(+id);
+  @Get('me')
+  @Roles('EMPLOYEE', 'ADMIN')
+  findOne(@Req() req) {
+    return this.accountService.findOne(req.user.userId);
   }
 }

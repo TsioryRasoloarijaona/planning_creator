@@ -6,6 +6,8 @@ import {
 import { UpdateLeaveDto } from './dto/update-leave.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { Prisma } from 'generated/prisma';
+import { UpdateOneLeaveDto } from './dto/updateOne-leave.dto';
+import { FindAllLeaveDto } from './dto/find-all-leave.dto';
 
 @Injectable()
 export class LeaveService {
@@ -24,25 +26,35 @@ export class LeaveService {
     }
   }
 
-  findAll() {
-    return this.db.leave.findMany({
-      include: {
-        account: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        admin: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
+  async findAll(): Promise<FindAllLeaveDto[]> {
+    const rows = await this.db.leave.findMany({
+      select: {
+        id: true,
+        Status: true,
+        Reason: true,
+        StartDate: true,
+        EndDate: true,
+        createdAt: true,
+        updatedAt: true,
+        account: { select: { id: true, name: true, email: true } },
+        admin: { select: { id: true, name: true, email: true } },
       },
+      orderBy: { createdAt: 'desc' },
     });
+
+    return rows.map((r) => ({
+      id: r.id,
+      status: r.Status,
+      reason: r.Reason,
+      startDate: r.StartDate.toISOString(),
+      endDate: r.EndDate.toISOString(),
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt?.toISOString() ? r.updatedAt.toISOString() : null,
+      accountId: r.account.id,
+      adminValidator: r.admin ? r.admin.id : null,
+      account: r.account,
+      admin: r.admin,
+    }));
   }
 
   findOne(id: number) {
@@ -94,8 +106,48 @@ export class LeaveService {
     }
   }
 
-  update(id: number, updateLeaveDto: UpdateLeaveDto) {
-    return `This action updates a #${id} leave`;
+  update(updateLeaveDto: UpdateLeaveDto) {
+    const { ids, adminId, status } = updateLeaveDto;
+    if (!ids.length)
+      throw new InternalServerErrorException('ids array is empty');
+    try {
+      return this.db.leave.updateMany({
+        where: {
+          id: { in: ids },
+        },
+        data: {
+          Status: status,
+          adminValidator: adminId,
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.log('error', error);
+      throw new InternalServerErrorException(
+        'Error updating leave : ' + error.message,
+      );
+    }
+  }
+
+  updateOne(updateOne: UpdateOneLeaveDto) {
+    const { id, adminId, status } = updateOne;
+    try {
+      return this.db.leave.update({
+        where: {
+          id: id,
+        },
+        data: {
+          Status: status,
+          adminValidator: adminId,
+          updatedAt: new Date(),
+        },
+      });
+    } catch (error) {
+      console.log('error', error);
+      throw new InternalServerErrorException(
+        'Error updating leave : ' + error.message,
+      );
+    }
   }
 
   remove(id: number) {

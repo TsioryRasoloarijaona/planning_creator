@@ -10,11 +10,12 @@ import { hashPassword } from 'src/utils/crypto.util';
 import { createAccountRequest } from './dto/create-account-request.dto';
 import { generatePassword } from 'src/utils/password-ganerator.util';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { createAccountResDto } from './dto/create--account-res.dto';
 
 @Injectable()
 export class AccountService {
   constructor(private readonly db: DatabaseService) {}
-  async create(createAccount: createAccountRequest) {
+  async create(createAccount: createAccountRequest): Promise<createAccountResDto> {
     if (await this.findByEmail(createAccount.email)) {
       throw new ConflictException(`${createAccount.email} is already taken`);
     }
@@ -45,13 +46,12 @@ export class AccountService {
         id: true,
         email: true,
         name: true,
-        role: true
+        role: true,
       },
     });
   }
 
   async findOne(id: number) {
-    console.log('id', typeof id);
     const account = await this.db.account.findUnique({
       where: {
         id: id,

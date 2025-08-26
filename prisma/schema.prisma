@@ -45,4 +45,6 @@ model Leave {
   account        Account  @relation(fields: [accountId], references: [id])
   adminValidator Int?
   admin          Account? @relation("AdminValidator", fields: [adminValidator], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime? 
 }

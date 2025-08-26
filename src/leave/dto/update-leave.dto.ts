@@ -1,4 +1,12 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateLeaveDto } from './create-leave.dto';
+import { Allow } from 'class-validator';
+import { Prisma } from 'generated/prisma';
 
-export class UpdateLeaveDto extends PartialType(CreateLeaveDto) {}
+export class UpdateLeaveDto {
+  @Allow()
+  ids: Array<number>;
+  @Allow()
+  adminId?: number;
+  @Allow()
+  status: Prisma.EnumStatusFieldUpdateOperationsInput;
+
+}

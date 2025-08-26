@@ -1,10 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { LeaveService } from './leave.service';
-import { CreateLeaveDto } from './dto/create-leave.dto';
 import { UpdateLeaveDto } from './dto/update-leave.dto';
 import { Prisma } from 'generated/prisma';
+import { UpdateOneLeaveDto } from './dto/updateOne-leave.dto';
+import { FindAllLeaveDto } from './dto/find-all-leave.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
+import { RolesGuard } from 'src/auth/guard/role.guard';
+import { Roles } from 'src/auth/decorator/role.decorator';
 
 @Controller('leave')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
 
@@ -14,12 +29,14 @@ export class LeaveController {
   }
 
   @Get()
-  findAll() {
+  findAll(): Promise<FindAllLeaveDto[]> {
     return this.leaveService.findAll();
   }
 
-  @Get('account/:accountId')
-  findByAccountId(@Param('accountId') accountId: number) {
+  @Get('account')
+  @Roles('EMPLOYEE', 'ADMIN')
+  findByAccountId(@Req() req) {
+    const accountId = req.user.userId;
     return this.leaveService.findByAccountId(accountId);
   }
 
@@ -31,16 +48,23 @@ export class LeaveController {
   @Get('status/:status')
   findByStatus(@Param('status') status: Prisma.EnumStatusFilter<'Leave'>) {
     return this.leaveService.findByStatus(status);
-  } 
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.leaveService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateLeaveDto: UpdateLeaveDto) {
-    return this.leaveService.update(+id, updateLeaveDto);
+  @Patch('')
+  @Roles('ADMIN')
+  update(@Req() req ,@Body() updateLeaveDto: UpdateLeaveDto) {
+    updateLeaveDto.adminId = req.user.userId;
+    return this.leaveService.update(updateLeaveDto);
+  }
+
+  @Patch('one')
+  updateOne(@Body() updateOneLeaveDto: UpdateOneLeaveDto) {
+    return this.leaveService.updateOne(updateOneLeaveDto);
   }
 
   @Delete(':id')
