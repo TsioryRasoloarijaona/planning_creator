@@ -11,11 +11,14 @@ import { createAccountRequest } from './dto/create-account-request.dto';
 import { generatePassword } from 'src/utils/password-ganerator.util';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { createAccountResDto } from './dto/create--account-res.dto';
+import { Prisma } from 'generated/prisma';
 
 @Injectable()
 export class AccountService {
   constructor(private readonly db: DatabaseService) {}
-  async create(createAccount: createAccountRequest): Promise<createAccountResDto> {
+  async create(
+    createAccount: createAccountRequest,
+  ): Promise<createAccountResDto> {
     if (await this.findByEmail(createAccount.email)) {
       throw new ConflictException(`${createAccount.email} is already taken`);
     }
@@ -40,15 +43,54 @@ export class AccountService {
     };
   }
 
-  async findAll(): Promise<findAccount[]> {
-    return this.db.account.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
-    });
+  async findAll(page = 1): Promise<{ data: findAccount[]; total: number }> {
+    const take = 10;
+    const skip = (page - 1) * take;
+
+    const [data, total] = await Promise.all([
+      this.db.account.findMany({
+        skip,
+        take,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+        },
+      }),
+      this.db.account.count(),
+    ]);
+
+    return { data, total };
+  }
+
+  async findFilter(q: string) {
+    try {
+      const accounts = await this.db.account.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: q,
+              },
+            },
+            {
+              email: {
+                contains: q,
+              },
+            },
+          ],
+        },
+
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      });
+      return accounts;
+    } catch (error) {}
   }
 
   async findOne(id: number) {

@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res, HttpCode } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -16,13 +16,24 @@ export class AuthController {
     const token = loginRs.accessToken;
     res.cookie('accessToken', token, {
       httpOnly: true,
-      maxAge : 3600000
+      maxAge: 3600000, 
+      sameSite: 'lax', 
+      //secure: process.env.NODE_ENV === 'production', // conseillée en prod
+      path: '/', 
     });
     return loginRs;
   }
 
-  @Get('test')
-  async test() {
-    return 'test';
+  @Post('logout')
+  @HttpCode(200)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    });
+    return { message: 'Logout successful' };
   }
+
 }

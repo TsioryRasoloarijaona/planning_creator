@@ -8,6 +8,7 @@ import {
   Delete,
   Req,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { LeaveService } from './leave.service';
 import { UpdateLeaveDto } from './dto/update-leave.dto';
@@ -17,20 +18,24 @@ import { FindAllLeaveDto } from './dto/find-all-leave.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/role.guard';
 import { Roles } from 'src/auth/decorator/role.decorator';
+import { CreateLeaveDto } from './dto/create-leave.dto';
+import { Response } from 'express';
 
 @Controller('leave')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
-
   @Post()
-  create(@Body() createLeaveDto: Prisma.LeaveCreateInput) {
+  @Roles('EMPLOYEE', 'ADMIN')
+  create(@Req() req, @Body() createLeaveDto: CreateLeaveDto) {
+    createLeaveDto.accountId = req.user.userId;
     return this.leaveService.create(createLeaveDto);
   }
 
   @Get()
-  findAll(): Promise<FindAllLeaveDto[]> {
-    return this.leaveService.findAll();
+  @Roles('ADMIN')
+  findAll(@Query('page') page = 1) {
+    return this.leaveService.findAll(page);
   }
 
   @Get('account')
@@ -57,13 +62,14 @@ export class LeaveController {
 
   @Patch('')
   @Roles('ADMIN')
-  update(@Req() req ,@Body() updateLeaveDto: UpdateLeaveDto) {
+  update(@Req() req, @Body() updateLeaveDto: UpdateLeaveDto) {
     updateLeaveDto.adminId = req.user.userId;
     return this.leaveService.update(updateLeaveDto);
   }
 
   @Patch('one')
-  updateOne(@Body() updateOneLeaveDto: UpdateOneLeaveDto) {
+  updateOne(@Req() req, @Body() updateOneLeaveDto: UpdateOneLeaveDto) {
+    updateOneLeaveDto.adminId = req.user.userId;
     return this.leaveService.updateOne(updateOneLeaveDto);
   }
 

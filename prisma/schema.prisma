@@ -20,13 +20,14 @@ enum Roles {
 }
 
 model Account {
-  id       Int     @id @default(autoincrement())
-  name     String
-  email    String  @unique
-  password String
-  role     Roles
-  Leave    Leave[]
-  validatedLeaves Leave[] @relation("AdminValidator")
+  id              Int            @id @default(autoincrement())
+  name            String
+  email           String         @unique
+  password        String
+  role            Roles
+  Leave           Leave[]
+  validatedLeaves Leave[]        @relation("AdminValidator")
+  PlanningWeek    PlanningWeek[]
 }
 
 enum Status {
@@ -36,15 +37,58 @@ enum Status {
 }
 
 model Leave {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   StartDate      DateTime
   EndDate        DateTime
   Reason         String
-  Status         Status   @default(PENDING)
+  Status         Status    @default(PENDING)
   accountId      Int
-  account        Account  @relation(fields: [accountId], references: [id])
+  account        Account   @relation(fields: [accountId], references: [id])
   adminValidator Int?
-  admin          Account? @relation("AdminValidator", fields: [adminValidator], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime? 
+  admin          Account?  @relation("AdminValidator", fields: [adminValidator], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime?
+}
+
+enum PlanningLabel {
+  CALL
+  MESSAGING
+  CHAT
+  PAUSE
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model PlanningWeek {
+  id        Int      @id @default(autoincrement())
+  accountId Int
+  account   Account  @relation(fields: [accountId], references: [id])
+  isoWeek   String
+  weekEnd   DateTime
+  slots PlanningSlot[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([accountId, isoWeek])
+}
+
+model PlanningSlot {
+  id           Int           @id @default(autoincrement())
+  weekId       Int
+  week         PlanningWeek  @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  day          Weekday
+  startMinutes Int
+  endMinutes   Int
+  label        PlanningLabel
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([weekId, day, startMinutes])
 }
