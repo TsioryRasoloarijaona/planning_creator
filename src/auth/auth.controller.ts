@@ -35,7 +35,7 @@ export class AuthController {
     res.clearCookie('accessToken', {
       httpOnly: true,
       sameSite: 'none',
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       path: '/',
     });
     return { message: 'Logout successful' };
