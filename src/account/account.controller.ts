@@ -17,32 +17,32 @@ import { createAccountResDto } from './dto/create--account-res.dto';
 import type { AutentificatedRequestDto } from 'src/auth/dto/request.dto';
 
 @Controller('account')
-@UseGuards(JwtAuthGuard, RolesGuard)
+//@UseGuards(JwtAuthGuard, RolesGuard)
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
   @Post()
-  @Roles('ADMIN')
+  //@Roles('ADMIN')
   create(
     @Body() createAccountDto: createAccountRequest,
   ): Promise<createAccountResDto> {
     return this.accountService.create(createAccountDto);
   }
 
-  @Roles("ADMIN")
+  //@Roles("ADMIN")
   @Post('many')
   createMany(@Body() createAccountDto: createAccountRequest[]){
     return this.accountService.createMany(createAccountDto)
   }
 
   @Get('ping')
-  @Roles('EMPLOYEE')
+  //@Roles('EMPLOYEE')
   ping(@Req() req: AutentificatedRequestDto) {
     return req.user;
   }
 
   @Get()
-  @Roles('ADMIN')
+  //@Roles('ADMIN')
   @Get()
   async getAll(@Query('page') page = '1') {
     const pageNumber = parseInt(page, 10) || 1;
@@ -50,19 +50,19 @@ export class AccountController {
   }
 
   @Get('me')
-  @Roles('EMPLOYEE', 'ADMIN')
+  //@Roles('EMPLOYEE', 'ADMIN')
   findOne(@Req() req: AutentificatedRequestDto) {
     return this.accountService.findOne(req.user.userId);
   }
 
   @Get('filter')
-  @Roles('ADMIN')
+  //@Roles('ADMIN')
   async getFilter(@Query('filter') filter: string) {
     return this.accountService.findFilter(filter);
   }
 
   @Patch('pwd')
-  @Roles('ADMIN', 'EMPLOYEE')
+  //@Roles('ADMIN', 'EMPLOYEE')
   async updatePwd(@Req() req: AutentificatedRequestDto, @Query('pwd') pwd: string) {
     return this.accountService.updatePassword(req.user.userId, pwd);
   }
