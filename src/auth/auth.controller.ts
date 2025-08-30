@@ -24,6 +24,11 @@ export class AuthController {
     return loginRs;
   }
 
+  @Get()
+  async ping(){
+    return "ping"
+  }
+
   @Post('logout')
   @HttpCode(200)
   logout(@Res({ passthrough: true }) res: Response) {
