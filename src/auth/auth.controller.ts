@@ -18,7 +18,7 @@ export class AuthController {
       httpOnly: true,
       maxAge: 3600000, 
       sameSite: 'none', 
-      secure: process.env.NODE_ENV === 'production',
+      secure: true,
       path: '/', 
     });
     return loginRs;
