@@ -22,7 +22,7 @@ async function bootstrap() {
     .build();
 
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173','https://planning-app-front.vercel.app/'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
