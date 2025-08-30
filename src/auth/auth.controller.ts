@@ -18,7 +18,7 @@ export class AuthController {
       httpOnly: true,
       maxAge: 3600000, 
       sameSite: 'lax', 
-      //secure: process.env.NODE_ENV === 'production', // conseillée en prod
+      secure: process.env.NODE_ENV === 'production', // conseillée en prod
       path: '/', 
     });
     return loginRs;
