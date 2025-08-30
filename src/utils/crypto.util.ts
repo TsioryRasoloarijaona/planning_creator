@@ -2,8 +2,7 @@
 import * as bcrypt from 'bcrypt';
 
 const SALT_ROUNDS = 10; 
-const PEPPER = process.env.PASSWORD_PEPPER ?? ''; // optionnel, stocké en secret
-
+const PEPPER = process.env.PASSWORD_PEPPER ?? '';
 export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain + PEPPER, SALT_ROUNDS);
 }

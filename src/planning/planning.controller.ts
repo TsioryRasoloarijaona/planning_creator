@@ -16,6 +16,7 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt.guard';
 import { RolesGuard } from 'src/auth/guard/role.guard';
 import { Roles } from 'src/auth/decorator/role.decorator';
 import { Prisma } from 'generated/prisma';
+import {type AutentificatedRequestDto} from 'src/auth/dto/request.dto'
 
 @UseGuards(JwtAuthGuard , RolesGuard)
 @Controller('planning')
@@ -36,6 +37,12 @@ export class PlanningController {
   @Get(':week')
   findOne(@Param('week') week: string , @Req() req) {
     return this.planningService.findOne(req.user.userId , week);
+  }
+
+  @Get('month/:month')
+  @Roles('EMPLOYEE')
+  findMonth(@Param('month') month: string , @Req() req : AutentificatedRequestDto){
+    return this.planningService.findByMonth(req.user.userId , month)
   }
 
   @Patch(':id')

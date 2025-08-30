@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { findAccount } from './dto/find-account.dto';
@@ -11,36 +12,81 @@ import { createAccountRequest } from './dto/create-account-request.dto';
 import { generatePassword } from 'src/utils/password-ganerator.util';
 import { CreateAccountDto } from './dto/create-account.dto';
 import { createAccountResDto } from './dto/create--account-res.dto';
-import { Prisma } from 'generated/prisma';
+import { MailService } from 'src/mail/mail.service';
+import { SendAccountCreatedDto } from 'src/mail/dto/send-account.dto';
 
 @Injectable()
 export class AccountService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly mail: MailService,
+  ) {}
   async create(
     createAccount: createAccountRequest,
   ): Promise<createAccountResDto> {
     if (await this.findByEmail(createAccount.email)) {
       throw new ConflictException(`${createAccount.email} is already taken`);
     }
+
+    const front = process.env.FRONT_URL || '';
     const generatedPassword = generatePassword();
     const encryptedPwd = await hashPassword(generatedPassword);
+
     const newAccount: CreateAccountDto = {
       name: createAccount.name,
       email: createAccount.email,
       password: encryptedPwd,
       role: createAccount.role,
     };
-    const createdAccount = await this.db.account.create({
-      data: newAccount,
-    });
+
+    const createdAccount = await this.db.account.create({ data: newAccount });
+
+    const emailData: SendAccountCreatedDto = {
+      to: createAccount.email,
+      fullName: createAccount.name,
+      loginUrl: front,
+      tempPassword: generatedPassword,
+      email: createAccount.email,
+    };
+
+    try {
+      await this.mail.sendAccountCreated(emailData); 
+    } catch (err) {
+      console.error('mail send failed:', err?.response || err?.message || err);
+    }
 
     return {
       id: createdAccount.id,
       name: createdAccount.name,
       email: createdAccount.email,
-      password: generatedPassword,
+      password: generatedPassword, // ⚠️ à éviter en prod; afficher une seule fois côté admin
       role: createdAccount.role,
     };
+  }
+
+  async createMany(createAccount: createAccountRequest[]) {
+    let data: createAccountResDto[] = [];
+    for (let i = 0; i < createAccount.length; i++) {
+      const encryptedPwd = await hashPassword('securePassword123');
+      const newAccount: CreateAccountDto = {
+        name: createAccount[i].name,
+        email: createAccount[i].email,
+        password: encryptedPwd,
+        role: createAccount[i].role,
+      };
+      const createdAccount = await this.db.account.create({
+        data: newAccount,
+      });
+
+      data.push({
+        id: createdAccount.id,
+        name: createdAccount.name,
+        email: createdAccount.email,
+        password: 'securePassword123',
+        role: createdAccount.role,
+      });
+    }
+    return data;
   }
 
   async findAll(page = 1): Promise<{ data: findAccount[]; total: number }> {
@@ -123,6 +169,23 @@ export class AccountService {
 
   update(id: number, updateAccountDto: UpdateAccountDto) {
     return `This action updates a #${id} account`;
+  }
+
+  async updatePassword(id: number, newPwd: string) {
+    try {
+      const hashedPwd = await hashPassword(newPwd);
+      return await this.db.account.update({
+        where: {
+          id: id,
+        },
+        data: {
+          password: hashedPwd,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException(error);
+    }
   }
 
   remove(id: number) {

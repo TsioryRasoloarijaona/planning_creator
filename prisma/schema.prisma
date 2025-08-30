@@ -51,10 +51,12 @@ model Leave {
 }
 
 enum PlanningLabel {
-  CALL
-  MESSAGING
+  INBOUND
+  OUTBOUND
+  EMAILING
   CHAT
-  PAUSE
+  BREAK
+  LUNCH
 }
 
 enum Weekday {

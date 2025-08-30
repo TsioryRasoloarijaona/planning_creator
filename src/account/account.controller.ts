@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   Query,
+  Patch,
 } from '@nestjs/common';
 import { AccountService } from './account.service';
 import { createAccountRequest } from './dto/create-account-request.dto';
@@ -26,6 +27,12 @@ export class AccountController {
     @Body() createAccountDto: createAccountRequest,
   ): Promise<createAccountResDto> {
     return this.accountService.create(createAccountDto);
+  }
+
+  @Roles("ADMIN")
+  @Post('many')
+  createMany(@Body() createAccountDto: createAccountRequest[]){
+    return this.accountService.createMany(createAccountDto)
   }
 
   @Get('ping')
@@ -52,5 +59,11 @@ export class AccountController {
   @Roles('ADMIN')
   async getFilter(@Query('filter') filter: string) {
     return this.accountService.findFilter(filter);
+  }
+
+  @Patch('pwd')
+  @Roles('ADMIN', 'EMPLOYEE')
+  async updatePwd(@Req() req: AutentificatedRequestDto, @Query('pwd') pwd: string) {
+    return this.accountService.updatePassword(req.user.userId, pwd);
   }
 }

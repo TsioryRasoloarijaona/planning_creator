@@ -9,14 +9,18 @@ import { Prisma } from 'generated/prisma';
 import { UpdateOneLeaveDto } from './dto/updateOne-leave.dto';
 import { FindAllLeaveDto } from './dto/find-all-leave.dto';
 import { CreateLeaveDto } from './dto/create-leave.dto';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class LeaveService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly mail: MailService,
+  ) {}
 
   async create(createLeaveDto: CreateLeaveDto) {
     try {
-      return await this.db.leave.create({
+      const leave = await this.db.leave.create({
         data: {
           StartDate: createLeaveDto.StartDate,
           EndDate: createLeaveDto.EndDate,
@@ -24,6 +28,20 @@ export class LeaveService {
           account: { connect: { id: createLeaveDto.accountId } },
         },
       });
+      const acc = await this.db.account.findUnique({
+        where: {
+          id: leave.accountId,
+        },
+      });
+      await this.mail.sendLeaveRequest({
+        to: 'callinout299@gmail.com',
+        name: acc?.name || '',
+        startDate: createLeaveDto.StartDate.toISOString(),
+        endDate: createLeaveDto.EndDate.toISOString(),
+        appName: 'callinOut',
+      });
+
+      return leave;
     } catch (error) {
       console.log('error', error);
       throw new InternalServerErrorException(
@@ -40,13 +58,13 @@ export class LeaveService {
     const pageSize = Math.max(1, Number(take) || 10);
     const skip = (currentPage - 1) * pageSize;
 
-    // Compter total & nb de PENDING
+  
     const [total, pendingCount] = await Promise.all([
       this.db.leave.count(),
       this.db.leave.count({ where: { Status: 'PENDING' } }),
     ]);
 
-    // Sélecteur commun
+  
     const select = {
       id: true,
       Status: true,
